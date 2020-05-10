@@ -8,6 +8,7 @@ int linenum = 1,i=0;
 char buf[MAX_LINE_LENG];
 char tmp[MAX_LINE_LENG];
 char* keywords[28] = {"BOOLEAN","BREAK","CHAR","CASE","CLASS","CONTINUE","DEF","DO","ELSE","EXIT","FALSE","FLOAT","FOR","IF","INT","NULL","OBJECT","PRINT","PRINTLN","REPEAT","RETURN","STRING","TO","TRUE","TYPE","VAL","VAR","WHILE"};
+char c;
 typedef struct {
     int key;
     char* value;
@@ -39,7 +40,6 @@ int lookup(char *s){
 	for(i=0;i<symbolTables->size;i++){
 		if(symbolTables->hasvalue[i]){
 			if(strcmp(symbolTables->items[i]->value,s)==0){
-				puts("in table!");
 				return i;
 			}
 		}
@@ -55,7 +55,7 @@ void dump(){
 }
 void insert(char *s){
 	if(i=lookup(s)){
-		printf("free %d\n",i);
+		//printf("free %d\n",i);
 		free(symbolTables->items[i]->value);
 		char * b = malloc(sizeof(char)*strlen(s));
 		strcpy(b,s);
@@ -78,11 +78,12 @@ void insert(char *s){
 	symbolTables->hasvalue[symbolTables->count] = 1;
 }
 %}
+real [+-]?[0-9]+\.[0-9]+
 iderror [0-9]+[A-Za-z]+ 
 nothing "/*".*"*/"|"//".*
-delimiters [(){}\[\];\.:,\+\-\*\/%<!]|"&&"|"\|\|"|"<="|">="|"=="|"!="
-string \".*\"
-real [+-]?[0-9]+\.[0-9]+
+delimiters [=(){}\[\];\.:,\+\-\*\/%<!]|"&&"|"\|\|"|"<="|">="|"=="|"!="
+string \"[^"]*\"
+
 id [a-zA-Z]+[0-9]*[A-Za-z]*
 number [0-9]+
 char [A-Za-z]
@@ -93,13 +94,21 @@ char [A-Za-z]
          exit(-1);}
 {nothing} {LIST;};
 {delimiters} {	
-			memset(tmp,0,MAX_LINE_LENG);
 			tmp[0]='\'';
 			strcat(tmp,yytext);
 			strcat(tmp,"'");
-			token(tmp);}
-{string} {tokenString("string",yytext);}
+			token(tmp);
+			memset(tmp,0,MAX_LINE_LENG);}
 [\t ]*  {LIST;}
+{string} {
+			c = input();
+			if(c=='"'){
+				unput(c);		
+				yymore();
+			}else{
+				tokenString("string",yytext);
+				unput(c);
+			}}			
 \n      {
         LIST;
         printf("%d: %s", linenum++, buf);
@@ -119,6 +128,7 @@ char [A-Za-z]
 			if(strcmp(tmp,keywords[i])==0){
 				i=99;
 				token(tmp);
+				memset(tmp,0,MAX_LINE_LENG);
 				break;
 			}
 		}
@@ -126,8 +136,7 @@ char [A-Za-z]
 			tokenString("id",yytext);
 			insert(yytext);
 		}
-		
-	}
+		memset(tmp,0,MAX_LINE_LENG);}
 . 	{
         LIST;
         printf("%d:%s\n", linenum+1, buf);
@@ -139,6 +148,7 @@ char [A-Za-z]
 
 main()
 {
+memset(tmp,0,MAX_LINE_LENG);
 symbolTables = create();
 yyin = fopen("test.c","r");
 yylex();
