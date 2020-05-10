@@ -146,11 +146,16 @@ char [A-Za-z]
 %%
 
 
-main()
+main(int argc, char *argv[])
 {
+if(argc==2){
+	yyin = fopen(argv[1],"r");
+}else{
+	puts("Format error!");
+	return;
+}
 memset(tmp,0,MAX_LINE_LENG);
 symbolTables = create();
-yyin = fopen("test.c","r");
 yylex();
 puts("Symbol Table:");
 dump();
