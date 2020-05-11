@@ -4,11 +4,13 @@
 #define tokenInteger(t,i) {LIST; printf("<%s:%d>\n",t,i);}
 #define tokenString(t,s) {LIST; printf("<%s:%s>\n",t,s);}
 #define MAX_LINE_LENG 256
-int linenum = 1,i=0;
+int linenum = 1,i=0,j=0;
 char buf[MAX_LINE_LENG];
 char tmp[MAX_LINE_LENG];
+char tmp1[MAX_LINE_LENG];
 char* keywords[28] = {"BOOLEAN","BREAK","CHAR","CASE","CLASS","CONTINUE","DEF","DO","ELSE","EXIT","FALSE","FLOAT","FOR","IF","INT","NULL","OBJECT","PRINT","PRINTLN","REPEAT","RETURN","STRING","TO","TRUE","TYPE","VAL","VAR","WHILE"};
 char c;
+char *locate;
 typedef struct {
     int key;
     char* value;
@@ -83,7 +85,6 @@ iderror [0-9]+[A-Za-z]+
 nothing "/*".*"*/"|"//".*
 delimiters [=(){}\[\];\.:,\+\-\*\/%<!]|"&&"|"\|\|"|"<="|">="|"=="|"!="
 string \"[^"]*\"
-
 id [a-zA-Z]+[0-9]*[A-Za-z]*
 number [0-9]+
 char [A-Za-z]
@@ -103,12 +104,27 @@ char [A-Za-z]
 {string} {
 			c = input();
 			if(c=='"'){
-				unput(c);		
 				yymore();
-			}else{
-				tokenString("string",yytext);
-				unput(c);
-			}}			
+			}else{	
+				tmp[0]='"';
+				tmp[1]='"';
+				tmp[2]= 0;
+				memset(tmp1,0,MAX_LINE_LENG);
+				strcpy(tmp1,yytext);
+				locate = strstr(tmp1,tmp);
+				i=locate-tmp1;
+				while(i>0){
+					for(j=i;j<strlen(tmp1)-1;j++){
+						tmp1[j]=tmp1[j+1];
+					}
+					tmp1[strlen(tmp1)-1]=0;
+					locate = strstr(tmp1,tmp);
+					i=locate-tmp1;
+				}
+				tokenString("string",tmp1);
+			}
+			memset(tmp,0,MAX_LINE_LENG);
+			unput(c);}			
 \n      {
         LIST;
         printf("%d: %s", linenum++, buf);
