@@ -140,7 +140,6 @@ char [A-Za-z]
 {real} tokenString("real",yytext);
 {number} tokenInteger("integer",atoi(yytext));
 {keywords} {
-			puts("into keyword");
 			memset(tmp,0,MAX_LINE_LENG);
 			strcpy(tmp,yytext);
 			for(i=0;i<strlen(tmp);i++){
