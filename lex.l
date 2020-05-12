@@ -8,7 +8,6 @@ int linenum = 1,i=0,j=0;
 char buf[MAX_LINE_LENG];
 char tmp[MAX_LINE_LENG];
 char tmp1[MAX_LINE_LENG];
-char* keywords[28] = {"BOOLEAN","BREAK","CHAR","CASE","CLASS","CONTINUE","DEF","DO","ELSE","EXIT","FALSE","FLOAT","FOR","IF","INT","NULL","OBJECT","PRINT","PRINTLN","REPEAT","RETURN","STRING","TO","TRUE","TYPE","VAL","VAR","WHILE"};
 char c;
 char *locate;
 typedef struct {
@@ -57,43 +56,51 @@ void dump(){
 }
 void insert(char *s){
 	if(i=lookup(s)){
-		//printf("free %d\n",i);
 		free(symbolTables->items[i]->value);
 		char * b = malloc(sizeof(char)*strlen(s));
 		strcpy(b,s);
 		symbolTables->items[i]->value=b;
-		//printf("refresh sym %s\n",symbolTables->items[i]->value);
 		return;
 	}
 
 	while(symbolTables->hasvalue[symbolTables->count] && symbolTables->count<symbolTables->size){
 		symbolTables->count++;
 	}
-	//printf("%d___\n",symbolTables->count);
 	sitem *p = malloc(sizeof(sitem));
 	p->key = symbolTables->count;
 	char * b = malloc(sizeof(char)*strlen(s));
 	strcpy(b,s);
 	p->value = b;
-	//printf("insert into %d\n",symbolTables->count);
 	symbolTables->items[symbolTables->count] = p;
 	symbolTables->hasvalue[symbolTables->count] = 1;
 }
 %}
+%x C_COMMENT
 real [+-]?[0-9]+\.[0-9]+
 iderror [0-9]+[A-Za-z]+ 
-nothing "/*".*"*/"|"//".*
-delimiters [=(){}\[\];\.:,\+\-\*\/%<!]|"&&"|"\|\|"|"<="|">="|"=="|"!="
-string \"[^"]*\"
+nothing "//".*
+delimiters [=(){}\[\];\.:,\+\-\*\/%><!]|"&&"|"\|\|"|"<="|">="|"=="|"!="
+string \"[^"^\n]*\"
+keywords "boolean"|"break"|"char"|"case"|"class"|"continue"|"def"|"do"|"else"|"exit"|"false"|"float"|"for"|"if"|"int"|"null"|"object"|"print"|"println"|"repeat"|"return"|"string"|"to"|"true"|"type"|"val"|"var"|"while"
 id [a-zA-Z]+[0-9]*[A-Za-z]*
 number [0-9]+
 char [A-Za-z]
 %%
+"/*"            { 	LIST;
+					BEGIN(C_COMMENT); 
+				}
+<C_COMMENT>"*/" { 	LIST;
+					BEGIN(INITIAL); 
+				}
+<C_COMMENT>\n   {  	LIST;
+        			printf("%d: %s", linenum++, buf);
+        			buf[0] = '\0';}
+<C_COMMENT>.    { LIST;}
+{nothing} {LIST;};
 {iderror} {LIST;
 		 printf("%d:%s\n", linenum+1, buf);
          printf("bad character:'%s'\n",yytext);
          exit(-1);}
-{nothing} {LIST;};
 {delimiters} {	
 			tmp[0]='\'';
 			strcat(tmp,yytext);
@@ -132,27 +139,18 @@ char [A-Za-z]
         }
 {real} tokenString("real",yytext);
 {number} tokenInteger("integer",atoi(yytext));
-{id} {
-		memset(tmp,0,MAX_LINE_LENG);
-		strcat(tmp,yytext);
-		i=0;
-		while(tmp[i]){
-			tmp[i]=toupper(tmp[i]);
-			i++;
-		}
-		for (i=0;i<27;i++){
-			if(strcmp(tmp,keywords[i])==0){
-				i=99;
-				token(tmp);
-				memset(tmp,0,MAX_LINE_LENG);
-				break;
+{keywords} {
+			puts("into keyword");
+			memset(tmp,0,MAX_LINE_LENG);
+			strcpy(tmp,yytext);
+			for(i=0;i<strlen(tmp);i++){
+				tmp[i] = toupper(tmp[i]);
 			}
-		}
-		if(i!=99){
+			token(tmp);
+			memset(tmp,0,MAX_LINE_LENG);}
+{id} {
 			tokenString("id",yytext);
-			insert(yytext);
-		}
-		memset(tmp,0,MAX_LINE_LENG);}
+			insert(yytext);}
 . 	{
         LIST;
         printf("%d:%s\n", linenum+1, buf);
