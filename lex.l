@@ -62,7 +62,6 @@ void insert(char *s){
 		symbolTables->items[i]->value=b;
 		return;
 	}
-
 	while(symbolTables->hasvalue[symbolTables->count] && symbolTables->count<symbolTables->size){
 		symbolTables->count++;
 	}
@@ -76,7 +75,7 @@ void insert(char *s){
 }
 %}
 %x C_COMMENT
-real [+-]?[0-9]+\.[0-9]+
+real [0-9]+\.[0-9]+
 iderror [0-9]+[A-Za-z]+ 
 nothing "//".*
 delimiters [=(){}\[\];\.:,\+\-\*\/%><!]|"&&"|"\|\|"|"<="|">="|"=="|"!="
